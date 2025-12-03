@@ -12,6 +12,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c1-l5', title: 'Bài 5: Phép nhân và phép chia số tự nhiên' },
       { id: 'c1-l6', title: 'Bài 6: Lũy thừa với số mũ tự nhiên' },
       { id: 'c1-l7', title: 'Bài 7: Thứ tự thực hiện các phép tính' },
+      { id: 'c1-test', title: 'Kiểm tra cuối Chương 1', isChapterTest: true },
     ],
   },
   {
@@ -23,6 +24,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c2-l10', title: 'Bài 10: Số nguyên tố' },
       { id: 'c2-l11', title: 'Bài 11: Ước chung. Ước chung lớn nhất' },
       { id: 'c2-l12', title: 'Bài 12: Bội chung. Bội chung nhỏ nhất' },
+      { id: 'c2-test', title: 'Kiểm tra cuối Chương 2', isChapterTest: true },
     ],
   },
   {
@@ -34,6 +36,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c3-l15', title: 'Bài 15: Quy tắc dấu ngoặc' },
       { id: 'c3-l16', title: 'Bài 16: Phép nhân số nguyên' },
       { id: 'c3-l17', title: 'Bài 17: Phép chia hết. Ước và bội của một số nguyên' },
+      { id: 'c3-test', title: 'Kiểm tra cuối Chương 3', isChapterTest: true },
     ],
   },
   {
@@ -43,6 +46,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c4-l18', title: 'Bài 18: Hình tam giác đều. Hình vuông. Hình lục giác đều' },
       { id: 'c4-l19', title: 'Bài 19: Hình chữ nhật. Hình thoi. Hình bình hành. Hình thang cân' },
       { id: 'c4-l20', title: 'Bài 20: Chu vi và diện tích của một số tứ giác đã học' },
+      { id: 'c4-test', title: 'Kiểm tra cuối Chương 4', isChapterTest: true },
     ],
   },
   {
@@ -51,6 +55,7 @@ export const SYLLABUS: ChapterNode[] = [
     lessons: [
       { id: 'c5-l21', title: 'Bài 21: Hình có trục đối xứng' },
       { id: 'c5-l22', title: 'Bài 22: Hình có tâm đối xứng' },
+      { id: 'c5-test', title: 'Kiểm tra cuối Chương 5', isChapterTest: true },
     ],
   },
   {
@@ -62,6 +67,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c6-l25', title: 'Bài 25: Phép cộng và phép trừ phân số' },
       { id: 'c6-l26', title: 'Bài 26: Phép nhân và phép chia phân số' },
       { id: 'c6-l27', title: 'Bài 27: Hai bài toán về phân số' },
+      { id: 'c6-test', title: 'Kiểm tra cuối Chương 6', isChapterTest: true },
     ],
   },
   {
@@ -72,6 +78,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c7-l29', title: 'Bài 29: Tính toán với số thập phân' },
       { id: 'c7-l30', title: 'Bài 30: Làm tròn và ước lượng' },
       { id: 'c7-l31', title: 'Bài 31: Một số bài toán về tỉ số và tỉ số phần trăm' },
+      { id: 'c7-test', title: 'Kiểm tra cuối Chương 7', isChapterTest: true },
     ],
   },
   {
@@ -84,6 +91,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c8-l35', title: 'Bài 35: Trung điểm của đoạn thẳng' },
       { id: 'c8-l36', title: 'Bài 36: Góc' },
       { id: 'c8-l37', title: 'Bài 37: Số đo góc' },
+      { id: 'c8-test', title: 'Kiểm tra cuối Chương 8', isChapterTest: true },
     ],
   },
   {
@@ -96,6 +104,7 @@ export const SYLLABUS: ChapterNode[] = [
       { id: 'c9-l41', title: 'Bài 41: Biểu đồ cột kép' },
       { id: 'c9-l42', title: 'Bài 42: Kết quả có thể và sự kiện trong trò chơi, thí nghiệm' },
       { id: 'c9-l43', title: 'Bài 43: Xác suất thực nghiệm' },
+      { id: 'c9-test', title: 'Kiểm tra cuối Chương 9', isChapterTest: true },
     ],
   },
 ];

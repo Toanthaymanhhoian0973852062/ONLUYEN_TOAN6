@@ -1,9 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import LessonContent from './components/LessonContent';
 import { GeneratedLessonContent, LessonNode, LoadingState } from './types';
 import { generateLessonContent } from './services/geminiService';
 import { SYLLABUS } from './constants';
+
+// Skeleton Component for Loading State
+const LessonSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
+    {/* Header Skeleton */}
+    <div className="h-32 md:h-40 bg-slate-200 animate-pulse" />
+    
+    <div className="p-6 md:p-8 space-y-12">
+      {/* TOC Skeleton */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <div className="h-6 bg-slate-200 w-48 mb-6 rounded animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map(i => (
+             <div key={i} className="h-12 bg-white border border-slate-200 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      </div>
+
+      {/* Section 1 Skeleton */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse" />
+          <div className="h-8 w-64 bg-slate-200 rounded animate-pulse" />
+        </div>
+        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+           <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+           <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+           <div className="h-4 w-5/6 bg-slate-200 rounded animate-pulse" />
+           <div className="h-4 w-3/4 bg-slate-200 rounded animate-pulse" />
+        </div>
+      </div>
+
+      {/* Section 2 Skeleton */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse" />
+          <div className="h-8 w-64 bg-slate-200 rounded animate-pulse" />
+        </div>
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+           <div className="h-12 bg-slate-100 border-b border-slate-200 animate-pulse" />
+           <div className="p-5 space-y-8">
+             <div className="space-y-3">
+               <div className="h-5 w-40 bg-slate-200 rounded animate-pulse" />
+               <div className="h-20 bg-slate-50 rounded-lg border border-slate-100 animate-pulse" />
+             </div>
+             <div className="space-y-3">
+               <div className="h-5 w-40 bg-slate-200 rounded animate-pulse" />
+               <div className="h-32 bg-slate-50 rounded-lg border border-slate-100 animate-pulse" />
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
@@ -11,8 +66,21 @@ const App: React.FC = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>(LoadingState.IDLE);
   const [error, setError] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
-  // Check for API Key on mount
+  // Load progress from localStorage
+  useEffect(() => {
+    const savedProgress = localStorage.getItem('completedLessonIds');
+    if (savedProgress) {
+      try {
+        setCompletedLessonIds(JSON.parse(savedProgress));
+      } catch (e) {
+        console.error("Failed to parse progress", e);
+      }
+    }
+  }, []);
+
+  // Check for API Key
   useEffect(() => {
     if (!process.env.API_KEY) {
       setError("Vui lòng cấu hình API Key trong file .env hoặc biến môi trường.");
@@ -20,8 +88,36 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Flatten syllabus for linear navigation and index finding
+  const flatLessons = useMemo(() => {
+    return SYLLABUS.flatMap(chapter => 
+      chapter.lessons.map(lesson => ({ chapterTitle: chapter.title, lesson }))
+    );
+  }, []);
+
+  const currentIndex = flatLessons.findIndex(item => item.lesson.id === currentLessonId);
+  
+  // Previous item is always accessible if current is accessible
+  const prevItem = currentIndex > 0 ? flatLessons[currentIndex - 1] : null;
+  
+  // Next item availability check
+  const nextItem = currentIndex !== -1 && currentIndex < flatLessons.length - 1 ? flatLessons[currentIndex + 1] : null;
+  
+  // A lesson is unlocked if it's the first one OR the previous one is completed
+  const isLessonLocked = (lessonId: string) => {
+    const idx = flatLessons.findIndex(item => item.lesson.id === lessonId);
+    if (idx <= 0) return false; // First lesson always unlocked
+    const prevLessonId = flatLessons[idx - 1].lesson.id;
+    return !completedLessonIds.includes(prevLessonId);
+  };
+
   const handleSelectLesson = async (chapterTitle: string, lesson: LessonNode) => {
     if (loadingState === LoadingState.LOADING) return;
+
+    if (isLessonLocked(lesson.id)) {
+      alert("Bạn cần hoàn thành bài học trước đó để mở khóa bài này!");
+      return;
+    }
 
     setCurrentLessonId(lesson.id);
     setLoadingState(LoadingState.LOADING);
@@ -42,10 +138,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLessonPassed = () => {
+    if (currentLessonId && !completedLessonIds.includes(currentLessonId)) {
+      const newCompleted = [...completedLessonIds, currentLessonId];
+      setCompletedLessonIds(newCompleted);
+      localStorage.setItem('completedLessonIds', JSON.stringify(newCompleted));
+      
+      // Optional: Auto-scroll to bottom or show confetti
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar 
         currentLessonId={currentLessonId}
+        completedLessonIds={completedLessonIds}
         onSelectLesson={handleSelectLesson}
         isOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -75,26 +182,32 @@ const App: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-slate-800 mb-2">Chào mừng đến với Toán 6 KNTT Tutor</h2>
               <p className="text-slate-500 max-w-md mx-auto">
-                Chọn một bài học từ danh sách bên trái để bắt đầu. Hệ thống AI sẽ soạn bài giảng chi tiết cho bạn ngay lập tức.
+                Chọn một bài học từ danh sách bên trái để bắt đầu. Hệ thống AI sẽ soạn bài giảng và bài kiểm tra chi tiết cho bạn.
               </p>
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto text-left">
                 <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                  <div className="font-bold text-indigo-600 mb-1">Đầy đủ kiến thức</div>
-                  <div className="text-sm text-slate-500">Bao gồm toàn bộ 9 chương của sách giáo khoa KNTT.</div>
+                  <div className="font-bold text-indigo-600 mb-1">Cấu trúc 2025</div>
+                  <div className="text-sm text-slate-500">Bài kiểm tra mới gồm Trắc nghiệm, Đúng/Sai và Trả lời ngắn.</div>
                 </div>
                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                  <div className="font-bold text-indigo-600 mb-1">Cấu trúc chuẩn</div>
-                  <div className="text-sm text-slate-500">4 phần: Lý thuyết, Dạng bài, Tự luyện và Kiểm tra.</div>
+                  <div className="font-bold text-indigo-600 mb-1">Mở khóa bài học</div>
+                  <div className="text-sm text-slate-500">Hoàn thành bài kiểm tra (≥ 80 điểm) để mở khóa bài tiếp theo.</div>
                 </div>
               </div>
             </div>
           )}
 
           {loadingState === LoadingState.LOADING && (
-            <div className="flex flex-col items-center justify-center min-h-[50vh]">
-              <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-slate-500 font-medium">Đang soạn bài giảng, vui lòng đợi...</p>
-              <p className="text-slate-400 text-sm mt-2">AI đang tổng hợp lý thuyết và bài tập cho bạn</p>
+            <div className="animate-fade-in">
+              <div className="mb-4 text-center">
+                <p className="text-indigo-600 font-medium flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  Đang soạn bài giảng và đề kiểm tra...
+                </p>
+              </div>
+              <LessonSkeleton />
             </div>
           )}
 
@@ -117,7 +230,19 @@ const App: React.FC = () => {
           )}
 
           {loadingState === LoadingState.SUCCESS && lessonData && (
-            <LessonContent data={lessonData} />
+            <LessonContent 
+              data={lessonData} 
+              onLessonPassed={handleLessonPassed}
+              prevLesson={prevItem ? {
+                title: prevItem.lesson.title,
+                onClick: () => handleSelectLesson(prevItem.chapterTitle, prevItem.lesson)
+              } : undefined}
+              nextLesson={nextItem ? {
+                title: nextItem.lesson.title,
+                locked: isLessonLocked(nextItem.lesson.id),
+                onClick: () => handleSelectLesson(nextItem.chapterTitle, nextItem.lesson)
+              } : undefined}
+            />
           )}
         </main>
       </div>
