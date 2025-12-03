@@ -45,10 +45,23 @@ const BlockMath: React.FC<BlockMathProps> = ({ content }) => {
 const FormattedText = ({ text, className = "" }: { text: string; className?: string }) => {
   if (!text) return null;
 
+  // 0. Pre-process text to force newlines before list items or headings
+  // This looks for patterns like: "word 1. Title" or "word - Item" and inserts a newline
+  // Regex looks for:
+  // (?<=\S)\s+ : Positive lookbehind for non-whitespace, followed by whitespace
+  // (\d+\.|[a-z]\)|[-+•]) : The list marker
+  // Note: JavaScript regex lookbehind support might vary, so we use a simpler capture replacement.
+  
+  // Replace: [non-newline] [space] [marker] -> [char] [newline] [marker]
+  // Markers: 1., 2., a), b), -, +, •
+  // We use a safe regex that doesn't rely on lookbehind
+  const processedText = text
+    .replace(/([^\n])\s+(\d+\.)/g, '$1\n$2') // Numbered lists: 1. 2.
+    .replace(/([^\n])\s+([a-z]\))/g, '$1\n$2') // Letter lists: a) b)
+    .replace(/([^\n])\s+([-+•])/g, '$1\n$2'); // Bullets: - + •
+
   // 1. Split text by BLOCK MATH delimiters ($$...$$).
-  // This ensures that multi-line LaTeX blocks are preserved as single chunks.
-  // The regex captures the delimiters so they appear in the result array.
-  const segments = text.split(/(\$\$[\s\S]+?\$\$)/g);
+  const segments = processedText.split(/(\$\$[\s\S]+?\$\$)/g);
 
   return (
     <div className={`max-w-prose text-slate-700 leading-relaxed text-base ${className}`}>
@@ -65,11 +78,8 @@ const FormattedText = ({ text, className = "" }: { text: string; className?: str
         return lines.map((line, lineIdx) => {
           const trimmed = line.trim();
           
-          // Skip completely empty segments if they result from split artifacts, 
-          // but preserve intentional spacers if the original text had multiple newlines.
-          // For simplicity, we just use a small spacer for empty trimmed lines.
           if (!trimmed) {
-            // Only render spacer if it's not the last line of a segment to avoid double spacing at boundaries
+            // Only render spacer if it's not the last line of a segment
             if (lineIdx < lines.length - 1) {
               return <div key={`${segmentIdx}-${lineIdx}`} className="h-3" />;
             }
@@ -77,14 +87,15 @@ const FormattedText = ({ text, className = "" }: { text: string; className?: str
           }
 
           // Detect bullet points: starts with -, +, *, • followed by space
-          const bulletMatch = trimmed.match(/^([-+*•])\s+(.+)/);
+          // Or numbered lists: 1., 2. or a), b)
+          const bulletMatch = trimmed.match(/^([-+*•]|\d+\.|[a-z]\))\s+(.+)/);
 
           if (bulletMatch) {
             const bulletChar = bulletMatch[1];
             const content = bulletMatch[2];
             return (
               <div key={`${segmentIdx}-${lineIdx}`} className="flex items-start gap-3 mb-2 pl-1">
-                <span className="text-indigo-600 font-bold min-w-[14px] text-center select-none mt-[2px]">
+                <span className="text-indigo-600 font-bold min-w-[24px] text-right select-none mt-[2px] mr-1">
                   {bulletChar === '*' ? '•' : bulletChar}
                 </span>
                 <div className="flex-1 text-justify break-words">
@@ -94,7 +105,7 @@ const FormattedText = ({ text, className = "" }: { text: string; className?: str
             );
           }
 
-          // Standard paragraph
+          // Standard paragraph - Justified alignment
           return (
             <p key={`${segmentIdx}-${lineIdx}`} className="mb-3 text-justify break-words">
               {renderInlineContent(trimmed)}
@@ -115,7 +126,7 @@ const LessonContent: React.FC<LessonContentProps> = ({ data, prevLesson, nextLes
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden font-sans">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 md:p-8 text-white">
         <h2 className="text-2xl md:text-3xl font-bold mb-2">{renderInlineContent(data.lessonTitle, "font-bold text-white")}</h2>
