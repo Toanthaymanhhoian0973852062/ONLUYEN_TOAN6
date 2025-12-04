@@ -68,17 +68,41 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
-  // Load progress from localStorage
-  useEffect(() => {
-    const savedProgress = localStorage.getItem('completedLessonIds');
-    if (savedProgress) {
+  // Load progress on mount
+useEffect(() => {
+  // Kiểm tra môi trường browser trước khi dùng localStorage
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
       try {
-        setCompletedLessonIds(JSON.parse(savedProgress));
+        setProgress(JSON.parse(saved));
       } catch (e) {
         console.error("Failed to parse progress", e);
       }
     }
-  }, []);
+  }
+
+  // Fetch News
+  const fetchNews = async () => {
+    setNewsLoading(true);
+    try {
+      const data = await generateMathNews();
+      setNews(data);
+    } catch (e) {
+      console.error("Failed to fetch news");
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+  fetchNews();
+}, []);
+
+// Save progress on change
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  }
+}, [progress]);
 
   // Check for API Key
   useEffect(() => {
